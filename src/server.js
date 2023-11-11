@@ -19,42 +19,64 @@ mongoose.connect('mongodb+srv://greenstore987:greenstore@cluster0.hdkvf8p.mongod
     });
 
 app.get("/", function (req, res) {
-    const response = { message: "API WORKS!" };
-    res.json(response);
+    try {
+        const response = { message: "API WORKS!" };
+        res.json(response);
+    } catch (err) {
+        res.status(500).json({ message: err.message ?? "Something went wrong" })
+    }
+
 });
 
 app.get("/notes/list", async function (req, res) {
-    var notes = await note.find({ userid: req.query.userid });
-    res.status(200).json({data: notes});
+
+    try {
+        var notes = await note.find({ userid: req.query.userid });
+
+        res.status(200).json({ data: notes });
+    } catch (err) {
+        res.status(500).json({ message: err.message ?? "Something went wrong" })
+    }
+   
 });
 
 app.post("/notes/add", async function (req, res) {
+
+    try {
+        var isNote = await note.findOne({ userid: req.body.userid, id: req.body.id });
+        if (isNote) {
+            return res.status(403).json({
+                message: "already exist"
+            })
+        }
     
-    var isNote = await note.findOne({ userid: req.body.userid, id: req.body.id });
-    if(isNote){
-       return res.status(403).json({
-        message: "already exist"
-       })
+        const newNote = new note({
+            id: req.body.id,
+            userid: req.body.userid,
+            title: req.body.title,
+            content: req.body.content
+        });
+        await newNote.save();
+    
+        const response = { message: "new note created!" + `id: ${req.body.id}` };
+        res.status(201).json(response);
+        
+    } catch (err) {
+        res.status(500).json({ message: err.message ?? "Something went wrong" })
     }
 
-
-
-    const newNote = new note({
-        id: req.body.id,
-        userid: req.body.userid,
-        title: req.body.title,
-        content: req.body.content
-    });
-    await newNote.save();
-
-    const response = { message: "new note created!" + `id: ${req.body.id}` };
-    res.status(201).json(response);
+   
 });
 
 app.delete("/notes/delete", async function (req, res) {
-    await note.deleteOne({ id: req.body.id });
-    const response = { message: "note deleted !" + `id:${req.body.id}` };
-    res.json(response);
+    try {
+        await note.deleteOne({ id: req.body.id });
+        const response = { message: "note deleted !" + `id:${req.body.id}` };
+        res.status(200).json(response);
+    } catch (err) {
+        res.status(500).json({ message: err.message ?? "Something went wrong" })
+    }
+    
 });
 
 
